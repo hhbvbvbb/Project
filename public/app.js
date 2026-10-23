@@ -240,11 +240,22 @@ composer.addEventListener("submit", async (event) => {
   button.disabled = true;
   try {
     if (selectedFile) {
-      const form = new FormData();
-      form.set("conversationId", activeConversation);
-      form.set("text", text);
-      form.set("file", selectedFile);
-      await api("/api/files", { method: "POST", body: form });
+      const upload = await api("/api/uploads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: activeConversation, text, name: selectedFile.name, size: selectedFile.size }),
+      });
+      for (let offset = 0, part = 0; offset < selectedFile.size; offset += upload.chunkSize, part++) {
+        await api(`/api/uploads/${upload.id}/${part}`, {
+          method: "PUT",
+          body: selectedFile.slice(offset, offset + upload.chunkSize),
+        });
+      }
+      await api("/api/files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadId: upload.id }),
+      });
       clearSelectedFile();
     } else {
       await api("/api/messages", {

@@ -26,11 +26,23 @@ Optional server settings:
 | `CHAT_PORT` | `8000` | HTTP port |
 | `CHAT_COOKIE_SECURE` | `0` | Set to `1` when served over HTTPS |
 
-## Deploy the frontend to Netlify
+## Deploy to Netlify
 
-The root `netlify.toml` sets the repository root as the base directory and publishes `public/` directly, without a build command. Keep this file at the repository root; no nested project directory is required.
+The root `netlify.toml` publishes `public/` and deploys the TypeScript chat API in `netlify/functions/`. No frontend build command is needed. The `/api/*` route is handled by the chat function, including login, sessions, conversations, groups, messages, and attachments. Netlify Identity authenticates the fixed accounts, Netlify Database stores conversations and messages, and private Netlify Blobs store uploaded files. The database migration is applied automatically during deployment.
 
-This deploys the frontend assets only. Netlify static hosting does not run `server.py` or PHP, so login, messages, and uploads still require a separately hosted API or a backend adapted to Netlify Functions. Publishing the frontend alone does not make the chat API available.
+Before the first login, set a unique password of at least eight characters for each fixed account in Netlify's environment settings, scoped to Functions:
+
+- `CHAT_PASSWORD_KYLE_GUEST`
+- `CHAT_PASSWORD_LEO`
+- `CHAT_PASSWORD_GEEKER`
+- `CHAT_PASSWORD_FOFO`
+- `CHAT_PASSWORD_KYLE`
+
+Use the existing account selector and passphrase form. A fixed account is provisioned in Identity on its first successful login using its configured password. These are new Identity accounts; existing Supabase accounts, sessions, conversations, messages, and files are not imported. Server-created accounts carry trusted account metadata; public signups are denied and cannot access chat. Identity uses internal identifiers ending in `@nightwire.invalid`, which do not receive email. After provisioning, manage password changes through the Identity admin dashboard rather than changing the bootstrap environment variable.
+
+Attachments are uploaded in 2 MiB chunks and streamed on download, preserving the 10 MiB attachment limit within Netlify Functions payload limits. Downloads and all conversation operations check membership on the server.
+
+Run `npm install` and `netlify dev --port 8889` for local development. Run `npm run check` and `npm test` to check types and request validation/access controls. The Python/PHP Supabase backend described above is a separate legacy hosting option and is not used by the Netlify deployment.
 
 ## Access Supabase from PHP
 

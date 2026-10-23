@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080d0b">
+    <title>Nightwire — private chat</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main id="login-screen" class="login-screen">
+      <section class="login-card" aria-labelledby="login-title">
+        <a class="brand brand-login" href="/" aria-label="Nightwire home">
+          <span class="brand-mark" aria-hidden="true">N<span>_</span></span>
+          <span>NIGHTWIRE<span class="brand-dot">.NET</span></span>
+        </a>
+        <p class="eyebrow">PRIVATE NETWORK / AUTHORIZED USERS ONLY</p>
+        <h1 id="login-title">Access the wire.</h1>
+        <p class="login-copy">A quiet channel for the people who belong here.</p>
+        <form id="login-form">
+          <label for="username">USER ID</label>
+          <select id="username" name="username" required>
+            <option value="" selected disabled>Select your account</option>
+            <option value="kyle_guest">Kyle's Guest</option>
+            <option value="leo">Leo</option>
+            <option value="geeker">Geeker</option>
+            <option value="fofo">Fofo</option>
+            <option value="kyle">Kyle · Owner</option>
+          </select>
+          <label for="password">PASSPHRASE</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <p id="login-error" class="form-error" role="alert" hidden></p>
+          <button class="button button-primary login-button" type="submit">
+            Connect <span aria-hidden="true">↗</span>
+          </button>
+        </form>
+        <p class="login-foot"><span class="status-light"></span> PRIVATE SESSION · INVITE ONLY</p>
+      </section>
+      <div class="login-orbit orbit-one" aria-hidden="true"></div>
+      <div class="login-orbit orbit-two" aria-hidden="true"></div>
+      <p class="login-coordinate" aria-hidden="true">NW-04 · 41°24'12.2"N</p>
+    </main>
+
+    <main id="chat-screen" class="chat-screen" hidden>
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <a class="brand" href="/" aria-label="Nightwire home">
+            <span class="brand-mark" aria-hidden="true">N<span>_</span></span>
+            <span>NIGHTWIRE<span class="brand-dot">.NET</span></span>
+          </a>
+          <span class="network-pill"><span class="status-light"></span> PRIVATE</span>
+        </div>
+        <div class="user-card">
+          <div class="avatar avatar-self" id="user-avatar">?</div>
+          <div class="user-info">
+            <strong id="user-name">User</strong>
+            <span><span class="status-light"></span> Online</span>
+          </div>
+          <span id="user-role" class="owner-badge" hidden>OWNER</span>
+          <button id="logout-button" class="icon-button logout-button" type="button" aria-label="Sign out" title="Sign out">↪</button>
+        </div>
+        <div class="section-heading">
+          <span>YOUR CHANNELS</span>
+          <button id="new-group-button" class="icon-button add-button" type="button" aria-label="Create a group chat" title="Create a group chat">+</button>
+        </div>
+        <nav id="conversation-list" class="conversation-list" aria-label="Conversations"></nav>
+        <div class="sidebar-bottom">
+          <span class="lock-icon" aria-hidden="true">◈</span>
+          <div><strong>Members only</strong><span>No open registrations</span></div>
+          <span class="online-count"><i></i><i></i><i></i><i></i></span>
+        </div>
+      </aside>
+
+      <section class="chat-panel" aria-label="Chat">
+        <header class="chat-header">
+          <button id="mobile-menu" class="icon-button mobile-menu" type="button" aria-label="Show channels">☰</button>
+          <div class="channel-icon" id="channel-icon">↗</div>
+          <div class="channel-heading">
+            <h1 id="channel-name">Choose a channel</h1>
+            <p id="channel-meta">PRIVATE CHANNEL</p>
+          </div>
+          <div class="header-secure"><span class="status-light"></span> MEMBERS ONLY</div>
+        </header>
+
+        <div id="welcome-panel" class="welcome-panel">
+          <div class="welcome-symbol" aria-hidden="true">N<span>_</span></div>
+          <p class="eyebrow">THE WIRE IS QUIET</p>
+          <h2>Pick up where<br>you left off.</h2>
+          <p>Select a conversation to open a private channel.</p>
+          <div class="welcome-line"></div>
+        </div>
+        <div id="message-list" class="message-list" aria-live="polite" hidden></div>
+
+        <form id="composer" class="composer" hidden>
+          <div id="file-preview" class="file-preview" hidden></div>
+          <div class="composer-box">
+            <button id="attach-button" class="icon-button attach-button" type="button" aria-label="Attach a file" title="Attach a file">＋</button>
+            <input id="file-input" type="file" hidden>
+            <textarea id="message-input" name="message" rows="1" maxlength="2000" placeholder="Send a message..." aria-label="Message"></textarea>
+            <span class="composer-hint">↵ to send</span>
+            <button class="send-button" type="submit" aria-label="Send message" title="Send message">↑</button>
+          </div>
+          <div class="composer-footer">
+            <span>PRIVATE CHANNEL · <span id="member-count">0</span> MEMBERS</span>
+            <span>FILES UP TO 10 MB</span>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <dialog id="group-dialog" class="group-dialog">
+      <form id="group-form">
+        <div class="dialog-top">
+          <div><p class="eyebrow">NEW PRIVATE CHANNEL</p><h2>Create a group</h2></div>
+          <button id="close-dialog" class="icon-button" type="button" aria-label="Close">×</button>
+        </div>
+        <label for="group-name">CHANNEL NAME</label>
+        <input id="group-name" name="name" maxlength="40" required placeholder="e.g. after-hours">
+        <fieldset>
+          <legend>ADD MEMBERS</legend>
+          <div id="group-members" class="member-options"></div>
+        </fieldset>
+        <p id="group-error" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button id="cancel-group" class="button button-quiet" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Create channel <span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

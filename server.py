@@ -23,11 +23,11 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parent
 PUBLIC_DIR = ROOT / "public"
 PASSWORD_ENV = {
-    "kyle_guest": "CHAT_PASSWORD_KYLE_GUEST",
-    "leo": "CHAT_PASSWORD_LEO",
-    "geeker": "CHAT_PASSWORD_GEEKER",
-    "fofo": "CHAT_PASSWORD_FOFO",
-    "kyle": "CHAT_PASSWORD_KYLE",
+    "kyle_guest": "12345678",
+    "leo": "iamleoness",
+    "geeker": "iloveniggers",
+    "fofo": "ilovekyle",
+    "kyle": "mybigfatdick",
 }
 USERS = {
     "kyle_guest": "Kyle's Guest",

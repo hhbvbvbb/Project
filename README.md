@@ -26,6 +26,12 @@ Optional server settings:
 | `CHAT_PORT` | `8000` | HTTP port |
 | `CHAT_COOKIE_SECURE` | `0` | Set to `1` when served over HTTPS |
 
+## Deploy the frontend to Netlify
+
+The root `netlify.toml` sets the repository root as the base directory and publishes `public/` directly, without a build command. Keep this file at the repository root; no nested project directory is required.
+
+This deploys the frontend assets only. Netlify static hosting does not run `server.py` or PHP, so login, messages, and uploads still require a separately hosted API or a backend adapted to Netlify Functions. Publishing the frontend alone does not make the chat API available.
+
 ## Access Supabase from PHP
 
 [`database.php`](./database.php) provides a server-side Supabase REST client. PHP requires the cURL extension and the same `SUPABASE_URL` and server-only key in its environment.

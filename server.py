@@ -22,20 +22,9 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
 PUBLIC_DIR = ROOT / "public"
-PASSWORD_ENV = {
-    "kyle_guest": "12345678",
-    "leo": "iamleoness",
-    "geeker": "iloveniggers",
-    "fofo": "ilovekyle",
-    "kyle": "mybigfatdick",
-}
-USERS = {
-    "kyle_guest": "Kyle's Guest",
-    "leo": "Leo",
-    "geeker": "Geeker",
-    "fofo": "Fofo",
-    "kyle": "Kyle",
-}
+OWNER_USERNAME = "kyle"
+USERS = {}
+PASSWORD_ENV = {}
 PASSWORD_ITERATIONS = 310_000
 SESSION_SECONDS = 60 * 60 * 24 * 7
 MAX_JSON_BYTES = 64 * 1024
@@ -76,6 +65,59 @@ def load_local_environment():
         except ValueError as exc:
             raise RuntimeError(f"Invalid value in .env on line {line_number}") from exc
         os.environ[name] = " ".join(parts)
+
+
+def load_user_registry():
+    global USERS, PASSWORD_ENV
+
+    configured = {}
+    for key, raw_value in os.environ.items():
+        name = key.strip().upper()
+        value = raw_value.strip()
+        if not value:
+            continue
+
+        if name.startswith("CHAT_USER_"):
+            if name.endswith("_PASSWORD"):
+                username = name[len("CHAT_USER_") : -len("_PASSWORD")].lower()
+                configured.setdefault(username, {})["password"] = value
+            elif name.endswith("_NAME"):
+                username = name[len("CHAT_USER_") : -len("_NAME")].lower()
+                configured.setdefault(username, {})["display_name"] = value
+        elif name.startswith("CHAT_PASSWORD_"):
+            username = name[len("CHAT_PASSWORD_") :].lower()
+            configured.setdefault(username, {})["password"] = value
+
+    if not configured:
+        raise RuntimeError(
+            "Set CHAT_USER_KYLE_NAME and CHAT_USER_KYLE_PASSWORD in the environment or .env file. "
+            "Add more users with CHAT_USER_<USER>_NAME and CHAT_USER_<USER>_PASSWORD."
+        )
+
+    owner_entry = configured.get(OWNER_USERNAME)
+    if owner_entry is None or not owner_entry.get("password"):
+        raise RuntimeError(
+            "The owner account is required. Set CHAT_USER_KYLE_NAME and CHAT_USER_KYLE_PASSWORD."
+        )
+
+    USERS.clear()
+    PASSWORD_ENV.clear()
+    for username in sorted(configured):
+        details = configured[username]
+        password = details.get("password", "").strip()
+        if not password or len(password) < 8:
+            raise RuntimeError(
+                f"User '{username}' must have a password of at least 8 characters."
+            )
+
+        display_name = details.get("display_name") or username.replace("_", " ").title()
+        if username == OWNER_USERNAME and not details.get("display_name"):
+            display_name = "Kyle"
+
+        USERS[username] = display_name
+        PASSWORD_ENV[username] = password
+
+    return USERS, PASSWORD_ENV
 
 
 class SupabaseClient:
@@ -396,7 +438,7 @@ class ChatHandler(BaseHTTPRequestHandler):
                         "user": {
                             "id": user["username"],
                             "displayName": user["display_name"],
-                            "role": "owner" if user["username"] == "kyle" else "member",
+                            "role": "owner" if user["username"] == OWNER_USERNAME else "member",
                         },
                         "users": [
                             {"id": username, "displayName": name}
@@ -620,7 +662,7 @@ class ChatHandler(BaseHTTPRequestHandler):
                 "user": {
                     "id": username,
                     "displayName": USERS[username],
-                    "role": "owner" if username == "kyle" else "member",
+                    "role": "owner" if username == OWNER_USERNAME else "member",
                 },
                 "users": [
                     {"id": user_id, "displayName": display_name}
@@ -809,26 +851,15 @@ class ChatHandler(BaseHTTPRequestHandler):
 
 def main():
     load_local_environment()
-    passwords = {
-        username: os.environ.get(variable, "")
-        for username, variable in PASSWORD_ENV.items()
-    }
-    missing = [
-        variable
-        for username, variable in PASSWORD_ENV.items()
-        if not passwords[username] or len(passwords[username]) < 8
-    ]
-    if missing:
-        print(
-            "Set a unique password of at least 8 characters for each fixed account: "
-            + ", ".join(missing),
-            file=sys.stderr,
-        )
+    try:
+        load_user_registry()
+    except RuntimeError as exc:
+        print(f"Nightwire startup failed: {exc}", file=sys.stderr)
         return 2
 
     try:
         database = SupabaseClient.from_environment()
-        initialize_database(database, passwords)
+        initialize_database(database, PASSWORD_ENV)
     except (RuntimeError, SupabaseError) as exc:
         print(f"Nightwire startup failed: {exc}", file=sys.stderr)
         return 1
@@ -849,3 +880,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

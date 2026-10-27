@@ -1,22 +1,20 @@
 # Nightwire
 
-A private, invite-only chat room for five fixed accounts, including the `kyle` owner account. It supports direct messages, private group chats, live updates, and file attachments up to 10 MB. There is no registration or user-creation endpoint.
+A private, invite-only chat room for a configured set of fixed accounts, with the `kyle` owner account required. It supports direct messages, private group chats, live updates, and file attachments up to 10 MB.
 
 ## Configure Supabase
 
-1. In the Supabase dashboard, open **SQL Editor** and run [`supabase/schema.sql`](./supabase/schema.sql). This creates the app's tables, enables row-level security without public policies, and creates the private `chat-files` Storage bucket.
-2. Copy `.env.example` to `.env` and fill in your Supabase project URL, server-only key, and the five account passwords. Keep `.env` private; it is ignored by Git. Do not put a Supabase secret/service-role key in `public/`, HTML, or browser JavaScript.
+1. In the Supabase dashboard, open **SQL Editor** and run [`supabase/schema.sql`](./supabase/schema.sql). This creates the app's tables, enables row-level security without public policies, and creates the necessary storage bucket.
+2. Copy `.env.example` to `.env` and fill in your Supabase project URL, server-only key, and your allowed chat users. The owner account (`kyle`) is required. Add more accounts by creating `CHAT_USER_<USER>_NAME` and `CHAT_USER_<USER>_PASSWORD` entries, or remove any block to disable that user. Keep `.env` private; it is ignored by Git. Do not put a Supabase secret/service key in frontend code.
 3. Start the app:
 
 ```sh
 python3 server.py
 ```
 
-Open <http://127.0.0.1:8000>. Python 3.10 or newer is required; the server uses only the Python standard library. On hosted deployments, configure the same values in the host's environment/secrets settings instead of committing `.env`.
+Open <http://127.0.0.1:8000>. Python 3.10 or newer is required; the server uses only the Python standard library. On hosted deployments, configure the same values in the host's environment/secrets manager.
 
-Use `SUPABASE_SERVICE_ROLE_KEY` for a legacy service-role key, or `SUPABASE_SECRET_KEY` for a newer Supabase secret key. Either key is privileged and must only be available to server processes. The browser calls this app's API and never receives the Supabase key.
-
-The server creates the fixed user records and direct-message channels on its first run. It hashes account passwords before storage; changing an environment password later does not reset an existing account password. To deploy over the internet, use HTTPS and set `CHAT_COOKIE_SECURE=1`.
+Use `SUPABASE_SERVICE_ROLE_KEY` for a legacy service-role key, or `SUPABASE_SECRET_KEY` for a newer Supabase secret key. Either key is privileged and must only be available to server processes. The app hashes account passwords before storage; changing an environment password later does not reset an existing account's password hash unless you manually remove the stored record.
 
 Optional server settings:
 
@@ -30,7 +28,7 @@ Optional server settings:
 
 The root `netlify.toml` sets the repository root as the base directory and publishes `public/` directly, without a build command. Keep this file at the repository root; no nested project directory is required.
 
-This deploys the frontend assets only. Netlify static hosting does not run `server.py` or PHP, so login, messages, and uploads still require a separately hosted API or a backend adapted to Netlify Functions. Publishing the frontend alone does not make the chat API available.
+This deploys the frontend assets only. Netlify static hosting does not run `server.py` or PHP, so login, messages, and uploads still require a separately hosted API or a backend adapted to Netlify.
 
 ## Access Supabase from PHP
 

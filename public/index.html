@@ -41,5 +41,102 @@
       <div class="login-orbit orbit-two" aria-hidden="true"></div>
       <p class="login-coordinate" aria-hidden="true">KS-04 · 41°24'12.2"N</p>
     </main>
+
+    <div id="chat-screen" class="chat-screen" hidden>
+      <aside class="sidebar" aria-label="Chat conversations">
+        <div class="sidebar-top">
+          <a class="brand" href="/" aria-label="Nightwire home">
+            <span class="brand-mark" aria-hidden="true">K<span>_</span></span>
+            <span>KYLE<span class="brand-dot">.SECRET</span></span>
+          </a>
+          <span class="network-pill"><span class="status-light"></span> ONLINE</span>
+        </div>
+
+        <div class="user-card">
+          <span id="user-avatar" class="avatar avatar-self" aria-label="Your profile picture"></span>
+          <div class="user-info">
+            <strong id="user-name">Guest</strong>
+            <span><span class="status-light"></span>ACTIVE</span>
+          </div>
+          <button id="profile-avatar-button" class="icon-button" type="button" aria-label="Upload profile picture">✦</button>
+          <input id="avatar-input" type="file" accept="image/*" hidden>
+          <span id="user-role" class="owner-badge" hidden>OWNER</span>
+          <button id="logout-button" class="icon-button logout-button" type="button" aria-label="Log out">↩</button>
+        </div>
+
+        <div class="section-heading">
+          <span>ROOMS</span>
+          <button id="new-group-button" class="icon-button add-button" type="button" aria-label="Create a private group">+</button>
+        </div>
+
+        <div id="conversation-list" class="conversation-list" aria-live="polite"></div>
+
+        <div class="sidebar-bottom">
+          <span class="lock-icon" aria-hidden="true">▣</span>
+          <div>
+            <strong>PRIVATE CHANNEL</strong>
+            <span>ENCRYPTED MESSAGES</span>
+          </div>
+          <span class="online-count" aria-label="Members online"><i></i><i></i><i></i></span>
+        </div>
+      </aside>
+
+      <section class="chat-panel" aria-live="polite">
+        <header class="chat-header">
+          <button id="mobile-menu" class="icon-button mobile-menu" type="button" aria-label="Toggle conversation list">☰</button>
+          <span id="channel-icon" class="channel-icon" aria-hidden="true">↗</span>
+          <div class="channel-heading">
+            <h1 id="channel-name">Select a room</h1>
+            <p id="channel-meta">PRIVATE DIRECT MESSAGE</p>
+          </div>
+          <div class="header-secure"><span class="status-light"></span> SECURE</div>
+        </header>
+
+        <div id="welcome-panel" class="welcome-panel">
+          <div class="welcome-symbol"><span>⌁</span>⌁</div>
+          <p class="eyebrow">PRIVATE MESSAGES</p>
+          <h2>Secure chat.</h2>
+          <p>Choose a conversation or start a private room.</p>
+          <div class="welcome-line"></div>
+        </div>
+
+        <div id="message-list" class="message-list" hidden></div>
+
+        <form id="composer" class="composer" hidden>
+          <div id="file-preview" class="file-preview" hidden></div>
+          <div class="composer-box">
+            <button id="attach-button" class="icon-button attach-button" type="button" aria-label="Attach file">＋</button>
+            <input id="file-input" type="file" accept="audio/*,video/*,image/*,.zip,.rar,.7z,.tar,.gz,.tgz,.bz2,.xz,.pdf,.txt,.doc,.docx,.csv,.xls,.xlsx,.ppt,.pptx" hidden>
+            <textarea id="message-input" rows="1" placeholder="Type your message…"></textarea>
+            <span class="composer-hint">ENTER</span>
+            <button class="send-button" type="submit" aria-label="Send message">➤</button>
+          </div>
+          <div class="composer-footer"><span>ATTACHMENTS ENABLED</span><span id="member-count">0</span> MEMBERS</div>
+        </form>
+      </section>
+    </div>
+
+    <dialog id="group-dialog" class="group-dialog">
+      <div class="dialog-top">
+        <div>
+          <p class="eyebrow">CREATE ROOM</p>
+          <h2>New private group</h2>
+        </div>
+        <button id="close-dialog" class="icon-button" type="button" aria-label="Close dialog">✕</button>
+      </div>
+      <form id="group-form" method="dialog">
+        <label for="group-name">CHANNEL NAME</label>
+        <input id="group-name" name="name" type="text" maxlength="40" placeholder="Team chat" required>
+        <fieldset>
+          <legend>SELECT MEMBERS</legend>
+          <div id="group-members" class="member-options"></div>
+        </fieldset>
+        <p id="group-error" class="form-error" hidden></p>
+        <div class="dialog-actions">
+          <button id="cancel-group" class="button button-quiet" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Create room</button>
+        </div>
+      </form>
+    </dialog>
   </body>
 </html>

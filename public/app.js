@@ -12,6 +12,8 @@ const filePreview = document.querySelector("#file-preview");
 const groupDialog = document.querySelector("#group-dialog");
 const groupForm = document.querySelector("#group-form");
 const groupError = document.querySelector("#group-error");
+const avatarInput = document.querySelector("#avatar-input");
+const profileAvatarButton = document.querySelector("#profile-avatar-button");
 
 let currentUser = null;
 let users = [];
@@ -45,14 +47,63 @@ function showChat(user, roster) {
   loginScreen.hidden = true;
   chatScreen.hidden = false;
   document.querySelector("#user-name").textContent = user.displayName;
-  document.querySelector("#user-avatar").textContent = initials(user.displayName);
+  renderAvatar(document.querySelector("#user-avatar"), user.displayName, user.id);
   document.querySelector("#user-role").hidden = user.role !== "owner";
   renderMemberOptions();
   loadConversations().catch(showError);
 }
 
 function initials(name) {
-  return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const value = String(name || "").trim();
+  if (!value) return "?";
+  return value
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getAvatarStorageKey(userId) {
+  return `nightwire-avatar:${userId}`;
+}
+
+function getAvatarSource(userId) {
+  try {
+    return localStorage.getItem(getAvatarStorageKey(userId)) || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function setAvatarSource(userId, dataUrl) {
+  try {
+    localStorage.setItem(getAvatarStorageKey(userId), dataUrl);
+  } catch (error) {
+    console.warn("Could not save avatar", error);
+  }
+}
+
+function renderAvatar(element, personName, userId) {
+  if (!element) return;
+  element.replaceChildren();
+  const source = userId ? getAvatarSource(userId) : "";
+  if (source) {
+    const image = document.createElement("img");
+    image.className = "avatar-image";
+    image.src = source;
+    image.alt = `${personName || "User"} profile picture`;
+    element.append(image);
+    return;
+  }
+  const badge = document.createElement("span");
+  badge.className = "avatar-initials";
+  badge.textContent = initials(personName);
+  element.append(badge);
+}
+
+function renderAvatarPreview(element, personName, userId) {
+  renderAvatar(element, personName, userId);
 }
 
 function showError(error) {
@@ -123,7 +174,13 @@ function renderConversations() {
 
     const avatar = document.createElement("span");
     avatar.className = "channel-avatar";
-    avatar.textContent = conversation.kind === "group" ? "#" : initials(conversation.name);
+    if (conversation.kind === "group") {
+      avatar.textContent = "#";
+    } else {
+      const peer = conversation.members.find((member) => member.id !== currentUser?.id);
+      renderAvatarPreview(avatar, peer ? peer.displayName : conversation.name || "User", peer ? peer.id : null);
+    }
+
     const copy = document.createElement("span");
     copy.className = "conversation-copy";
     const title = document.createElement("strong");
@@ -184,9 +241,11 @@ async function loadMessages(initial = false) {
 function appendMessage(message) {
   const article = document.createElement("article");
   article.className = "message";
+
   const avatar = document.createElement("span");
   avatar.className = "avatar";
-  avatar.textContent = initials(message.author);
+  renderAvatarPreview(avatar, message.author, message.userId);
+
   const content = document.createElement("div");
   content.className = "message-content";
   const top = document.createElement("div");
@@ -198,16 +257,35 @@ function appendMessage(message) {
   time.textContent = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(message.createdAt);
   top.append(name, time);
   content.append(top);
+
   if (message.text) {
     const text = document.createElement("p");
     text.className = "message-text";
     text.textContent = message.text;
     content.append(text);
   }
+
   if (message.file) {
+    const isImage = isPreviewableImage(message.file.name);
+    const isVideo = isPreviewableVideo(message.file.name);
+    if (isImage) {
+      const preview = document.createElement("img");
+      preview.className = "media-preview media-image";
+      preview.src = `/api/files/${message.file.id}`;
+      preview.alt = message.file.name;
+      content.append(preview);
+    } else if (isVideo) {
+      const preview = document.createElement("video");
+      preview.className = "media-preview media-video";
+      preview.src = `/api/files/${message.file.id}`;
+      preview.controls = true;
+      preview.preload = "metadata";
+      content.append(preview);
+    }
     const link = document.createElement("a");
     link.className = "file-card";
     link.href = `/api/files/${message.file.id}`;
+    link.download = message.file.name;
     const symbol = document.createElement("span");
     symbol.className = "file-symbol";
     symbol.textContent = "↓";
@@ -221,8 +299,19 @@ function appendMessage(message) {
     link.append(symbol, detail);
     content.append(link);
   }
+
   article.append(avatar, content);
   messageList.append(article);
+}
+
+function isPreviewableImage(fileName) {
+  const extension = (fileName || "").split(".").pop()?.toLowerCase();
+  return ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico", "avif"].includes(extension || "");
+}
+
+function isPreviewableVideo(fileName) {
+  const extension = (fileName || "").split(".").pop()?.toLowerCase();
+  return ["mp4", "webm", "ogg", "mov", "avi", "mkv", "m4v"].includes(extension || "");
 }
 
 function formatBytes(bytes) {
@@ -302,6 +391,35 @@ function clearSelectedFile() {
   filePreview.hidden = true;
 }
 
+profileAvatarButton.addEventListener("click", () => avatarInput.click());
+avatarInput.addEventListener("change", () => {
+  const file = avatarInput.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    showError(new Error("Profile images must be an image file."));
+    avatarInput.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const result = String(reader.result || "");
+    if (!currentUser) return;
+    setAvatarSource(currentUser.id, result);
+    renderAvatar(document.querySelector("#user-avatar"), currentUser.displayName, currentUser.id);
+    conversations.forEach((conversation) => {
+      const peer = conversation.members?.find((member) => member.id !== currentUser.id);
+      const avatarElement = conversationList.querySelector(
+        `[data-conversation-id="${CSS.escape(conversation.id)}"] .channel-avatar`
+      );
+      if (conversation.id === activeConversation && avatarElement) {
+        renderAvatarPreview(avatarElement, peer ? peer.displayName : conversation.name || "User", peer ? peer.id : currentUser.id);
+      }
+    });
+    avatarInput.value = "";
+  };
+  reader.readAsDataURL(file);
+});
+
 document.querySelector("#new-group-button").addEventListener("click", () => {
   groupError.hidden = true;
   groupForm.reset();
@@ -368,3 +486,9 @@ api("/api/me")
     if (error.message !== "Sign in required") console.error(error);
     showLogin();
   });
+
+if (conversationList) {
+  conversationList.querySelectorAll(".conversation").forEach((button) => {
+    button.dataset.conversationId = button.dataset.conversationId || button.getAttribute("data-conversation-id") || "";
+  });
+}
